@@ -38,9 +38,14 @@ public class FilesStorageServiceImpl implements FilesStorageService {
 	public FileInfo save(MultipartFile file) {
 		try {
 			String fileName = file.getOriginalFilename();
-			Files.copy(file.getInputStream(), this.root.resolve(fileName));
 			FileInfo fileInfo = new FileInfo(null, fileName, root + "/" + fileName);
+
+			// String extension = fileName.substring(fileName.lastIndexOf('.'),
+			// fileName.length());
+
 			FileInfo fInfo = fileDetailRepository.save(fileInfo);
+			Files.copy(file.getInputStream(), this.root.resolve(fInfo.getId()));
+
 			return fInfo;
 		} catch (Exception e) {
 			throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
@@ -48,9 +53,9 @@ public class FilesStorageServiceImpl implements FilesStorageService {
 	}
 
 	@Override
-	public Resource load(String filename) {
+	public Resource load(String fileCode) {
 		try {
-			Path file = root.resolve(filename);
+			Path file = root.resolve(fileCode);
 			Resource resource = new UrlResource(file.toUri());
 
 			if (resource.exists() || resource.isReadable()) {
