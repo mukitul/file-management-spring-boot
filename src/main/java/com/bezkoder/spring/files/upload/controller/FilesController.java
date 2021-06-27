@@ -17,30 +17,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
-import com.bezkoder.spring.files.upload.message.ResponseMessage;
-import com.bezkoder.spring.files.upload.model.FieldDetail;
 import com.bezkoder.spring.files.upload.model.FileInfo;
 import com.bezkoder.spring.files.upload.service.FilesStorageService;
 
 @Controller
-@CrossOrigin("http://localhost:3000")
+@CrossOrigin
 public class FilesController {
 
 	@Autowired
 	FilesStorageService storageService;
 
 	@PostMapping("/upload")
-	public ResponseEntity<ResponseMessage> uploadFile(@RequestParam("file") MultipartFile file,
-			@RequestParam("field") FieldDetail fieldDetail) {
-		String message = "";
+	public ResponseEntity<FileInfo> uploadFile(@RequestParam("file") MultipartFile file) {
+
 		try {
-			System.out.println("FieldDetail: " + fieldDetail.toString());
-			storageService.save(file);
-			message = "Uploaded the file successfully: " + file.getOriginalFilename();
-			return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message));
+			FileInfo fInfo = storageService.save(file);
+			return ResponseEntity.status(HttpStatus.OK).body(fInfo);
 		} catch (Exception e) {
-			message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new ResponseMessage(message));
+			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new FileInfo());
 		}
 	}
 
@@ -51,7 +45,7 @@ public class FilesController {
 			String url = MvcUriComponentsBuilder
 					.fromMethodName(FilesController.class, "getFile", path.getFileName().toString()).build().toString();
 
-			return new FileInfo(filename, url);
+			return new FileInfo("", filename, url);
 		}).collect(Collectors.toList());
 
 		return ResponseEntity.status(HttpStatus.OK).body(fileInfos);
