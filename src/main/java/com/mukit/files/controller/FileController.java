@@ -43,6 +43,5 @@ public class FileController {
     @GetMapping("/download/encoded-file/{resourceId}")
     public ResponseEntity<?> downloadEncodedFile(@PathVariable String resourceId) {
         return new ResponseEntity<>(fileService.downloadEncodedFile(resourceId), HttpStatus.OK);
-
     }
 }

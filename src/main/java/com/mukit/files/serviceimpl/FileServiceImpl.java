@@ -1,6 +1,5 @@
 package com.mukit.files.serviceimpl;
 
-import com.google.common.io.Files;
 import com.mukit.files.dto.request.wrapper.FileUploadRequestDto;
 import com.mukit.files.dto.response.FileDownloadResponse;
 import com.mukit.files.dto.response.FileUploadResponseDto;
@@ -10,9 +9,12 @@ import com.mukit.files.service.FileService;
 import com.mukit.files.service.FileStorageService;
 import com.mukit.files.utils.Constants;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import sun.misc.BASE64Decoder;
 
@@ -33,6 +35,9 @@ public class FileServiceImpl implements FileService {
         FileUploadResponseDto responseDto = new FileUploadResponseDto();
         FileInfo fileInfo = new FileInfo();
         try {
+            if (StringUtils.isEmpty(FilenameUtils.getExtension(file.getOriginalFilename()))) {
+                throw new RuntimeException("Invalid File Name");
+            }
             setFileInfo(file.getBytes(), null, file, fileInfo);
             fileStorageService.storeFile(file, fileInfo);
             fileInfoRepository.save(fileInfo);
@@ -77,7 +82,11 @@ public class FileServiceImpl implements FileService {
     public FileDownloadResponse downloadEncodedFile(String resourceId) {
         FileDownloadResponse fileDownloadResponse = new FileDownloadResponse();
         try {
-
+            FileInfo fileInfo = fileInfoRepository.findByResourceId(resourceId);
+            Resource resource = fileStorageService.retrieveFileAsResource(fileInfo);
+            byte[] byteData = FileUtils.readFileToByteArray(resource.getFile());
+            modelMapper.map(fileInfo, fileDownloadResponse);
+            fileDownloadResponse.setBase64Data(base64Encoder.encodeToString(byteData));
         } catch (Exception e) {
             fileDownloadResponse = null;
         }
@@ -89,11 +98,15 @@ public class FileServiceImpl implements FileService {
             modelMapper.map(requestDto.getFileUploadRequest(), fileInfo);
         } else if (null != multipartFile) {
             fileInfo.setFileName(multipartFile.getOriginalFilename());
-            fileInfo.setExtension(Files.getFileExtension(fileInfo.getFileName()));
+            fileInfo.setExtension(FilenameUtils.getExtension(fileInfo.getFileName()));
             fileInfo.setMimeType(multipartFile.getContentType());
         }
         fileInfo.setResourceId(UUID.randomUUID().toString());
-        fileInfo.setFileLocation(Constants.DEFAULT_PATH + "/" + fileInfo.getResourceId() + "/");
+        fileInfo.setFileLocation(createPath(fileInfo.getResourceId()));
         fileInfo.setSize(byteData.length / 1024 + " KB");
+    }
+
+    private String createPath(String resourceId) {
+        return Constants.BASE_PATH + "/" + resourceId + "/";
     }
 }
