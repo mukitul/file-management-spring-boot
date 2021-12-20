@@ -27,7 +27,7 @@ public class FileController {
     }
 
     @PostMapping("/upload/encoded-file")
-    public ResponseEntity<?> uploadMultipartFile(@RequestBody @Valid FileUploadRequestDto requestDto) {
+    public ResponseEntity<?> uploadEncodedFile(@RequestBody @Valid FileUploadRequestDto requestDto) {
         return new ResponseEntity<>(fileService.uploadEncodedFile(requestDto), HttpStatus.OK);
     }
 
